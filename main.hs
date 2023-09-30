@@ -31,7 +31,7 @@ argsParser = Args
     <*> option str (short 'r' <> metavar "REGEX" <> value "" <> help "Regex pattern to filter the files")
     <*> option str (short 'v' <> metavar "INV_REGEX" <> value "" <> help "Regex pattern to filter out the files")
 
-trackedFiles :: FilePath -> ExceptT String IO [String]
+trackedFiles :: FilePath -> ExceptT String IO [FilePath]
 trackedFiles repoPath = do
     (exitCode, stdout, stderr) <- liftIO $ readCreateProcessWithExitCode (shell $ "git -C " ++ repoPath ++ " ls-files") ""
     case exitCode of
@@ -42,26 +42,24 @@ displayFile :: (FilePath, String) -> String
 displayFile (fileName, fileContent) = fileName ++ ":\n" ++
     (dropWhileEnd isSpace $ dropWhile isSpace fileContent)
 
-filterRepoContents :: String -> String -> State [String] [String]
+filterRepoContents :: String -> String -> State [FilePath] [FilePath]
 filterRepoContents regexPattern inverseRegexPattern = do
     repoContents <- get
-    when (not $ null regexPattern ) $ put (filter (=~ regexPattern) repoContents)
+    when (not $ null regexPattern) $ put (filter (=~ regexPattern) repoContents)
 
     repoContents <- get
-    when (not $ null inverseRegexPattern ) $ put (filter (not . (=~ inverseRegexPattern)) repoContents)
+    when (not $ null inverseRegexPattern) $ put (filter (not . (=~ inverseRegexPattern)) repoContents)
 
     get >>= return
 
 mainWithExceptions :: Args -> ExceptT String IO ()
 mainWithExceptions args = do
     let repoPath_ = repoPath args
-    let regexPattern_ = regexPattern args
-    let inverseRegexPattern_ = inverseRegexPattern args
 
     repoContents <- (map (repoPath_ </>)) <$> trackedFiles repoPath_
-    let filteredInverseRepoContents = evalState (filterRepoContents regexPattern_ inverseRegexPattern_) repoContents
-    fileContents <- liftIO $ foldr (liftM2 (:)) (return []) (map readFile filteredInverseRepoContents)
-    (liftIO . putStrLn) $ intercalate "\n\n\n" (map displayFile $ zip filteredInverseRepoContents fileContents)
+    let filteredRepoContents = evalState (filterRepoContents (regexPattern args) (inverseRegexPattern args)) repoContents
+    fileContents <- liftIO $ foldr (liftM2 (:)) (return []) (map readFile filteredRepoContents)
+    (liftIO . putStrLn) $ intercalate "\n\n\n" (map displayFile $ zip filteredRepoContents fileContents)
 
 main :: IO ()
 main = do
