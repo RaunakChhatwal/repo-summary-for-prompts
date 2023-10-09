@@ -7,8 +7,7 @@
     let
         pkgs = nixpkgs.legacyPackages.x86_64-linux;
         haskellPackages = pkgs.haskellPackages;
-    in {
-        defaultPackage.x86_64-linux =
+        summr =
             with import nixpkgs { system = "x86_64-linux"; };
             stdenv.mkDerivation {
                 name = "summr";
@@ -22,5 +21,8 @@
                 buildPhase = "make";
                 installPhase = "mkdir -p $out/bin; install -t $out/bin summr";
             };
+    in {
+        inherit summr;
+        packages.x86_64-linux.default = summr;
     };
 }
