@@ -8,7 +8,7 @@ This tool allows you to use LLMs (Large Language Models) for coding by displayin
 summr <repo path> | wl-copy
 ```
 
-The command above will execute `a.out` with the provided repository path, outputting its content, which will be copied to the clipboard using `wl-copy`.
+The command above will output the repo's content, which will be copied to the clipboard using `wl-copy`.
 
 ## Filtering Files
 
